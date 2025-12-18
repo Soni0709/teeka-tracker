@@ -7,6 +7,7 @@ import type { UserProfile } from './types'
 import LandingPage from './pages/LandingPage'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
+import Dashboard from './pages/Dashboard'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 
 function App() {
@@ -78,7 +79,7 @@ function App() {
 
         {/* Protected Routes */}
         <Route element={<ProtectedRoute session={session} />}>
-          <Route path="/dashboard" element={<div className="p-8"><h1 className="text-2xl font-bold">Dashboard</h1><p>Welcome, {userProfile?.name}!</p></div>} />
+          <Route path="/dashboard" element={<Dashboard userProfile={userProfile} />} />
         </Route>
 
         {/* Catch all - redirect to home */}
