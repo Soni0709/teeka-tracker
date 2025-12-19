@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Syringe, Mail, Lock, Eye, EyeOff, User, MapPin } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, User, MapPin, ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import Logo from '@/components/common/Logo'
 
 const DISTRICTS = [
   'Ajmer', 'Alwar', 'Banswara', 'Baran', 'Barmer', 'Bharatpur', 'Bhilwara', 'Bikaner',
@@ -66,20 +67,21 @@ export default function Signup() {
       <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary/20 rounded-full blur-[100px]" />
       <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-secondary/20 rounded-full blur-[100px]" />
 
-      {/* Theme Toggle */}
-      <div className="absolute top-4 right-4">
+      {/* Back Button & Theme Toggle */}
+      <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
+        <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="h-4 w-4" />
+          Back to Home
+        </Link>
         <ThemeToggle />
       </div>
 
       <div className="w-full max-w-md relative">
         <div className="bg-card/80 backdrop-blur-xl border border-border rounded-2xl p-8 shadow-2xl animate-fade-in">
           {/* Logo */}
-          <Link to="/" className="flex items-center justify-center gap-2 mb-6">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-primary to-secondary shadow-lg shadow-primary/25">
-              <Syringe className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-2xl font-bold gradient-text">TeekaSetu</span>
-          </Link>
+          <div className="flex justify-center mb-6">
+            <Logo size="md" />
+          </div>
 
           <div className="text-center mb-6">
             <h1 className="text-2xl font-bold mb-2">Create Account</h1>
