@@ -36,12 +36,12 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Logo size="md" />
 
-          <div className="hidden md:flex items-center gap-6">
-            <a href="#features" className="text-sm text-muted-foreground hover:text-primary transition-colors">Features</a>
-            <a href="#stats" className="text-sm text-muted-foreground hover:text-primary transition-colors">Impact</a>
-            <a href="#testimonials" className="text-sm text-muted-foreground hover:text-primary transition-colors">Reviews</a>
+          <div className="hidden md:flex items-center gap-8">
+            <a href="#features" className="text-base font-medium text-slate-300 hover:text-cyan-400 transition-colors duration-200 border-b-2 border-transparent hover:border-cyan-400">Features</a>
+            <a href="#stats" className="text-base font-medium text-slate-300 hover:text-cyan-400 transition-colors duration-200 border-b-2 border-transparent hover:border-cyan-400">Impact</a>
+            <a href="#testimonials" className="text-base font-medium text-slate-300 hover:text-cyan-400 transition-colors duration-200 border-b-2 border-transparent hover:border-cyan-400">Reviews</a>
             <ThemeToggle />
-            <Link to="/login"><Button variant="ghost" size="sm">Sign In</Button></Link>
+            <Link to="/login"><Button variant="outline" size="sm">Sign In</Button></Link>
             <Link to="/signup"><Button size="sm" className="gradient-btn">Get Started</Button></Link>
           </div>
 
@@ -55,9 +55,9 @@ export default function LandingPage() {
 
         {menuOpen && (
           <div className="md:hidden border-t border-border bg-background p-4 space-y-3 animate-fade-in">
-            <a href="#features" className="block py-2 text-muted-foreground hover:text-primary" onClick={() => setMenuOpen(false)}>Features</a>
-            <a href="#stats" className="block py-2 text-muted-foreground hover:text-primary" onClick={() => setMenuOpen(false)}>Impact</a>
-            <a href="#testimonials" className="block py-2 text-muted-foreground hover:text-primary" onClick={() => setMenuOpen(false)}>Reviews</a>
+            <a href="#features" className="block py-2 text-base font-medium text-slate-300 hover:text-cyan-400" onClick={() => setMenuOpen(false)}>Features</a>
+            <a href="#stats" className="block py-2 text-base font-medium text-slate-300 hover:text-cyan-400" onClick={() => setMenuOpen(false)}>Impact</a>
+            <a href="#testimonials" className="block py-2 text-base font-medium text-slate-300 hover:text-cyan-400" onClick={() => setMenuOpen(false)}>Reviews</a>
             <div className="pt-2 space-y-2">
               <Link to="/login" onClick={() => setMenuOpen(false)}><Button variant="outline" className="w-full">Sign In</Button></Link>
               <Link to="/signup" onClick={() => setMenuOpen(false)}><Button className="w-full gradient-btn">Get Started</Button></Link>
@@ -77,9 +77,9 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/20 border border-primary/30 mb-6">
               <Heart className="h-4 w-4 text-primary" />
-              <span className="text-sm text-primary font-medium">Trusted by 500+ Health Workers</span>
+              <span className="text-sm text-white font-medium">Trusted by 500+ Health Workers</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6 text-foreground">
@@ -147,7 +147,7 @@ export default function LandingPage() {
             {stats.map((stat, i) => (
               <div key={i} className="text-center">
                 <p className="text-4xl sm:text-5xl font-bold text-primary mb-2">{stat.value}</p>
-                <p className="text-muted-foreground">{stat.label}</p>
+                <p className="text-foreground">{stat.label}</p>
               </div>
             ))}
           </div>
@@ -189,7 +189,7 @@ export default function LandingPage() {
               <Card key={i} className="bg-card hover:shadow-lg transition-shadow">
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-emerald-500 flex items-center justify-center text-white font-bold text-sm">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
                       {t.author[0]}
                     </div>
                     <div>
@@ -208,11 +208,11 @@ export default function LandingPage() {
       {/* CTA */}
       <section className="py-16">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="p-8 sm:p-12 rounded-2xl bg-gradient-to-r from-blue-600 to-emerald-500 text-white">
+          <div className="p-8 sm:p-12 rounded-2xl bg-gradient-to-r from-teal-500 to-purple-500 text-white">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">Ready to Get Started?</h2>
             <p className="text-white/90 mb-8 max-w-xl mx-auto">Join hundreds of healthcare professionals already using TeekaSetu.</p>
             <Link to="/signup">
-              <Button size="lg" className="bg-white text-blue-600 hover:bg-white/90 px-8 h-12">
+              <Button size="lg" className="bg-white text-teal-600 hover:bg-white/90 px-8 h-12">
                 Get Started Free
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
