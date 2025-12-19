@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { type Session } from '@supabase/supabase-js'
 import { supabase } from './lib/supabase'
+import { ThemeProvider } from './contexts/ThemeContext'
 import type { UserProfile } from './types'
 
 import LandingPage from './pages/LandingPage'
@@ -70,22 +71,24 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={!session ? <Login /> : <Navigate to="/dashboard" />} />
-        <Route path="/signup" element={!session ? <Signup /> : <Navigate to="/dashboard" />} />
+    <ThemeProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={!session ? <Login /> : <Navigate to="/dashboard" />} />
+          <Route path="/signup" element={!session ? <Signup /> : <Navigate to="/dashboard" />} />
 
-        {/* Protected Routes */}
-        <Route element={<ProtectedRoute session={session} />}>
-          <Route path="/dashboard" element={<Dashboard userProfile={userProfile} />} />
-        </Route>
+          {/* Protected Routes */}
+          <Route element={<ProtectedRoute session={session} />}>
+            <Route path="/dashboard" element={<Dashboard userProfile={userProfile} />} />
+          </Route>
 
-        {/* Catch all - redirect to home */}
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </BrowserRouter>
+          {/* Catch all - redirect to home */}
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </BrowserRouter>
+    </ThemeProvider>
   )
 }
 
