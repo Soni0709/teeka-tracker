@@ -21,7 +21,7 @@ function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       if (session) {
-        fetchUserProfile(session.user.id)
+        fetchUserProfile(session.user.id, session.user.email, session.user.user_metadata)
       } else {
         setLoading(false)
       }
@@ -31,7 +31,7 @@ function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       if (session) {
-        fetchUserProfile(session.user.id)
+        fetchUserProfile(session.user.id, session.user.email, session.user.user_metadata)
       } else {
         setUserProfile(null)
         setLoading(false)
@@ -41,18 +41,61 @@ function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  const fetchUserProfile = async (userId: string) => {
+  const fetchUserProfile = async (
+    userId: string, 
+    email?: string, 
+    metadata?: { name?: string; role?: string; district?: string }
+  ) => {
     try {
+      // Try to fetch existing profile
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', userId)
+        .maybeSingle() // Use maybeSingle instead of single to avoid error on 0 rows
+
+      if (error) {
+        console.error('Error fetching user profile:', error)
+        setLoading(false)
+        return
+      }
+
+      // If profile exists, use it
+      if (data) {
+        setUserProfile(data)
+        setLoading(false)
+        return
+      }
+
+      // If no profile exists, create one
+      console.log('No profile found, creating one...')
+      const newProfile = {
+        id: userId,
+        name: metadata?.name || email?.split('@')[0] || 'User',
+        email: email || '',
+        role: metadata?.role || 'health_worker'
+      }
+
+      const { data: createdProfile, error: createError } = await supabase
+        .from('user_profiles')
+        .insert(newProfile)
+        .select()
         .single()
 
-      if (error) throw error
-      setUserProfile(data)
+      if (createError) {
+        console.error('Error creating user profile:', createError)
+        // Still set a fallback profile for UI
+        setUserProfile({
+          id: userId,
+          name: metadata?.name || email?.split('@')[0] || 'User',
+          email: email || '',
+          role: 'health_worker'
+        })
+      } else {
+        setUserProfile(createdProfile)
+      }
     } catch (error) {
-      console.error('Error fetching user profile:', error)
+      console.error('Error in fetchUserProfile:', error)
     } finally {
       setLoading(false)
     }
@@ -61,10 +104,10 @@ function App() {
   // Show loading spinner while checking auth
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <p className="mt-4 text-muted-foreground">Loading...</p>
         </div>
       </div>
     )
