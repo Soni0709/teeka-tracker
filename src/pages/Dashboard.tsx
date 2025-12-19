@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom'
-import { LogOut, Stethoscope } from 'lucide-react'
+import { LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase'
+import Logo from '@/components/common/Logo'
 import type { UserProfile } from '@/types'
 
 interface DashboardProps {
@@ -21,12 +22,7 @@ export default function Dashboard({ userProfile }: DashboardProps) {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-blue-600 to-emerald-500 shadow-lg">
-              <Stethoscope className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-foreground">TeekaSetu</span>
-          </div>
+          <Logo size="md" clickable={false} />
 
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">

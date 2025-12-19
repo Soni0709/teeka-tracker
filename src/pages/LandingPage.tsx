@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ChartBar, ClipboardList, Users, ShieldCheck, ArrowRight, Menu, X, Heart, Activity, Stethoscope } from 'lucide-react'
+import { ChartBar, ClipboardList, Users, ShieldCheck, ArrowRight, Menu, X, Heart, Activity } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import Logo from '@/components/common/Logo'
 
 const features = [
   { icon: ChartBar, title: 'Interactive Dashboard', desc: 'Real-time charts and analytics to monitor vaccination progress.' },
@@ -33,12 +34,7 @@ export default function LandingPage() {
       {/* Navbar */}
       <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-blue-600 to-emerald-500 shadow-lg">
-              <Stethoscope className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-foreground">TeekaSetu</span>
-          </Link>
+          <Logo size="md" />
 
           <div className="hidden md:flex items-center gap-6">
             <a href="#features" className="text-sm text-muted-foreground hover:text-primary transition-colors">Features</a>
@@ -228,12 +224,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="py-8 border-t border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-600 to-emerald-500">
-              <Stethoscope className="h-4 w-4 text-white" />
-            </div>
-            <span className="font-semibold text-foreground">TeekaSetu</span>
-          </div>
+          <Logo size="sm" clickable={false} />
           <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} TeekaSetu. All rights reserved.</p>
           <div className="flex gap-6">
             <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">Privacy</a>
