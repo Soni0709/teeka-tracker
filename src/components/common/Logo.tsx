@@ -21,7 +21,12 @@ export default function Logo({ size = 'md', clickable = true, className = '' }: 
       <div className={`${container} rounded-xl bg-gradient-to-br from-primary to-secondary shadow-lg shadow-primary/25`}>
         <Syringe className={`${icon} text-white`} />
       </div>
-      <span className={`${text} font-bold gradient-text whitespace-nowrap`}>TeekaSetu</span>
+      <span className={`${text} font-bold whitespace-nowrap`} style={{
+        background: 'linear-gradient(to right, #14b8a6, #22d3ee)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text'
+      }}>TeekaSetu</span>
     </div>
   )
 
