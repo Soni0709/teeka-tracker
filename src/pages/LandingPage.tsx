@@ -36,10 +36,10 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Logo size="md" />
 
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-base font-medium text-slate-300 hover:text-cyan-400 transition-colors duration-200 border-b-2 border-transparent hover:border-cyan-400">Features</a>
-            <a href="#stats" className="text-base font-medium text-slate-300 hover:text-cyan-400 transition-colors duration-200 border-b-2 border-transparent hover:border-cyan-400">Impact</a>
-            <a href="#testimonials" className="text-base font-medium text-slate-300 hover:text-cyan-400 transition-colors duration-200 border-b-2 border-transparent hover:border-cyan-400">Reviews</a>
+          <div className="hidden md:flex items-center gap-6">
+            <a href="#features" className="text-base font-medium text-slate-700 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors duration-200 border-b-2 border-transparent hover:border-cyan-600 dark:hover:border-cyan-400">Features</a>
+            <a href="#stats" className="text-base font-medium text-slate-700 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors duration-200 border-b-2 border-transparent hover:border-cyan-600 dark:hover:border-cyan-400">Impact</a>
+            <a href="#testimonials" className="text-base font-medium text-slate-700 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors duration-200 border-b-2 border-transparent hover:border-cyan-600 dark:hover:border-cyan-400">Reviews</a>
             <ThemeToggle />
             <Link to="/login"><Button variant="outline" size="sm">Sign In</Button></Link>
             <Link to="/signup"><Button size="sm" className="gradient-btn">Get Started</Button></Link>
@@ -55,9 +55,9 @@ export default function LandingPage() {
 
         {menuOpen && (
           <div className="md:hidden border-t border-border bg-background p-4 space-y-3 animate-fade-in">
-            <a href="#features" className="block py-2 text-base font-medium text-slate-300 hover:text-cyan-400" onClick={() => setMenuOpen(false)}>Features</a>
-            <a href="#stats" className="block py-2 text-base font-medium text-slate-300 hover:text-cyan-400" onClick={() => setMenuOpen(false)}>Impact</a>
-            <a href="#testimonials" className="block py-2 text-base font-medium text-slate-300 hover:text-cyan-400" onClick={() => setMenuOpen(false)}>Reviews</a>
+            <a href="#features" className="block py-2 text-base font-medium text-slate-700 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400" onClick={() => setMenuOpen(false)}>Features</a>
+            <a href="#stats" className="block py-2 text-base font-medium text-slate-700 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400" onClick={() => setMenuOpen(false)}>Impact</a>
+            <a href="#testimonials" className="block py-2 text-base font-medium text-slate-700 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400" onClick={() => setMenuOpen(false)}>Reviews</a>
             <div className="pt-2 space-y-2">
               <Link to="/login" onClick={() => setMenuOpen(false)}><Button variant="outline" className="w-full">Sign In</Button></Link>
               <Link to="/signup" onClick={() => setMenuOpen(false)}><Button className="w-full gradient-btn">Get Started</Button></Link>
@@ -79,7 +79,7 @@ export default function LandingPage() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/20 border border-primary/30 mb-6">
               <Heart className="h-4 w-4 text-primary" />
-              <span className="text-sm text-white font-medium">Trusted by 500+ Health Workers</span>
+              <span className="text-sm text-foreground font-medium">Trusted by 500+ Health Workers</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6 text-foreground">
