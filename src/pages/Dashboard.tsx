@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LogOut, Stethoscope, RefreshCw } from 'lucide-react'
+import { LogOut, Stethoscope, RefreshCw, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { supabase } from '@/lib/supabase'
@@ -26,6 +26,8 @@ import {
   RecentVaccinationsTable
 } from '@/components/dashboard'
 
+import { AddVaccinationModal } from '@/components/forms'
+
 interface DashboardProps {
   userProfile: UserProfile | null
 }
@@ -41,6 +43,10 @@ export default function Dashboard({ userProfile }: DashboardProps) {
   const [ageGroupStats, setAgeGroupStats] = useState<AgeGroupStats[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
+  // Modal state
+  const [showAddVaccination, setShowAddVaccination] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   // Fetch all dashboard data
   const fetchDashboardData = async () => {
@@ -81,17 +87,22 @@ export default function Dashboard({ userProfile }: DashboardProps) {
 
   useEffect(() => {
     fetchDashboardData()
-  }, [])
+  }, [refreshKey])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
     navigate('/')
   }
 
+  const handleVaccinationAdded = () => {
+    // Refresh all dashboard data
+    setRefreshKey(prev => prev + 1)
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border">
+      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-xl bg-gradient-to-br from-blue-600 to-emerald-500 shadow-lg">
@@ -121,15 +132,25 @@ export default function Dashboard({ userProfile }: DashboardProps) {
             <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
             <p className="text-muted-foreground mt-1">Overview of vaccination program</p>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={fetchDashboardData}
-            disabled={loading}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={fetchDashboardData}
+              disabled={loading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            <Button 
+              size="sm" 
+              className="bg-gradient-to-r from-blue-600 to-emerald-500 hover:opacity-90"
+              onClick={() => setShowAddVaccination(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Vaccination
+            </Button>
+          </div>
         </div>
 
         {/* Error State */}
@@ -194,9 +215,16 @@ export default function Dashboard({ userProfile }: DashboardProps) {
 
         {/* Recent Vaccinations Table */}
         <div className="mt-6">
-          <RecentVaccinationsTable initialLimit={10} />
+          <RecentVaccinationsTable key={refreshKey} initialLimit={10} />
         </div>
       </main>
+
+      {/* Add Vaccination Modal */}
+      <AddVaccinationModal 
+        isOpen={showAddVaccination}
+        onClose={() => setShowAddVaccination(false)}
+        onSuccess={handleVaccinationAdded}
+      />
     </div>
   )
 }
