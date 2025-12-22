@@ -33,12 +33,12 @@
     --card: 0 0% 8%;
     --card-foreground: 210 40% 98%;
     --primary: 166 71% 50%;
-    --primary-foreground: 222 47% 11%;
+    --primary-foreground: 0 0% 100%;
     --secondary: 261 95% 70%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary-foreground: 0 0% 100%;
     --accent: 38 92% 50%;
-    --accent-foreground: 222 47% 11%;
-    --muted: 217 33% 22%;
+    --accent-foreground: 0 0% 100%;
+    --muted: 217 33% 18%;
     --muted-foreground: 215 20% 65%;
     --destructive: 0 63% 55%;
     --destructive-foreground: 210 40% 98%;

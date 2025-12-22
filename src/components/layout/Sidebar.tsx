@@ -88,7 +88,7 @@ export default function Sidebar({ userProfile }: SidebarProps) {
         {!isCollapsed && userProfile && (
           <div className="p-3 rounded-lg bg-muted/50">
             <p className="font-medium text-foreground text-sm truncate">{userProfile.name}</p>
-            <p className="text-xs text-muted-foreground truncate">{userProfile.email}</p>
+            <p className="text-xs text-foreground/70 truncate">{userProfile.email}</p>
             <p className="text-xs text-primary capitalize mt-1">{userProfile.role.replace('_', ' ')}</p>
           </div>
         )}
@@ -96,7 +96,7 @@ export default function Sidebar({ userProfile }: SidebarProps) {
         {/* Logout Button */}
         <Button
           variant="outline"
-          className={`w-full ${isCollapsed ? 'px-2' : ''}`}
+          className={`w-full text-foreground hover:bg-destructive hover:text-white hover:border-destructive ${isCollapsed ? 'px-2' : ''}`}
           onClick={handleLogout}
         >
           <LogOut className="h-4 w-4" />
