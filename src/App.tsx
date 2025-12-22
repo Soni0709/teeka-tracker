@@ -5,10 +5,20 @@ import { supabase } from './lib/supabase'
 import { ThemeProvider } from './contexts/ThemeContext'
 import type { UserProfile } from './types'
 
+// Layout
+import { AppLayout } from './components/layout'
+
+// Pages
 import LandingPage from './pages/LandingPage'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
+import Beneficiaries from './pages/Beneficiaries'
+import Vaccinations from './pages/Vaccinations'
+import Reports from './pages/Reports'
+import Settings from './pages/Settings'
+
+// Auth
 import ProtectedRoute from './components/auth/ProtectedRoute'
 
 function App() {
@@ -52,7 +62,7 @@ function App() {
         .from('user_profiles')
         .select('*')
         .eq('id', userId)
-        .maybeSingle() // Use maybeSingle instead of single to avoid error on 0 rows
+        .maybeSingle()
 
       if (error) {
         console.error('Error fetching user profile:', error)
@@ -122,9 +132,15 @@ function App() {
           <Route path="/login" element={!session ? <Login /> : <Navigate to="/dashboard" />} />
           <Route path="/signup" element={!session ? <Signup /> : <Navigate to="/dashboard" />} />
 
-          {/* Protected Routes */}
+          {/* Protected Routes with Layout */}
           <Route element={<ProtectedRoute session={session} />}>
-            <Route path="/dashboard" element={<Dashboard userProfile={userProfile} />} />
+            <Route element={<AppLayout userProfile={userProfile} />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/beneficiaries" element={<Beneficiaries />} />
+              <Route path="/vaccinations" element={<Vaccinations />} />
+              <Route path="/reports" element={<Reports />} />
+              <Route path="/settings" element={<Settings />} />
+            </Route>
           </Route>
 
           {/* Catch all - redirect to home */}

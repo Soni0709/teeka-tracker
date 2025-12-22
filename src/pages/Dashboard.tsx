@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { LogOut, Stethoscope, RefreshCw, Plus } from 'lucide-react'
+import { RefreshCw, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { ThemeToggle } from '@/components/ThemeToggle'
-import { supabase } from '@/lib/supabase'
-import type { UserProfile, TrendData, VaccineTypeStats, DistrictStats, AgeGroupStats } from '@/types'
+import type { TrendData, VaccineTypeStats, DistrictStats, AgeGroupStats } from '@/types'
 
 // API
 import { 
@@ -32,10 +29,6 @@ import {
 
 import { AddVaccinationModal } from '@/components/forms'
 
-interface DashboardProps {
-  userProfile: UserProfile | null
-}
-
 // Helper to convert FilterValues to API params
 function getApiFilters(filters: FilterValues): DashboardFilterParams {
   const apiFilters: DashboardFilterParams = {}
@@ -46,9 +39,7 @@ function getApiFilters(filters: FilterValues): DashboardFilterParams {
   return apiFilters
 }
 
-export default function Dashboard({ userProfile }: DashboardProps) {
-  const navigate = useNavigate()
-  
+export default function Dashboard() {
   // State
   const [stats, setStats] = useState<DashboardSummary | null>(null)
   const [trendData, setTrendData] = useState<TrendData[]>([])
@@ -112,11 +103,6 @@ export default function Dashboard({ userProfile }: DashboardProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterKey, refreshKey])
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    navigate('/')
-  }
-
   const handleVaccinationAdded = () => {
     setRefreshKey(prev => prev + 1)
   }
@@ -136,135 +122,109 @@ export default function Dashboard({ userProfile }: DashboardProps) {
   const currentApiFilters = getApiFilters(filters)
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-blue-600 to-emerald-500 shadow-lg">
-              <Stethoscope className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-foreground">TeekaSetu</span>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <span className="text-sm text-muted-foreground hidden sm:inline">
-              Welcome, <span className="font-medium text-foreground">{userProfile?.name || 'User'}</span>
-            </span>
-            <Button variant="outline" size="sm" onClick={handleLogout}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
-            </Button>
-          </div>
+    <div>
+      {/* Page Title */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground mt-1">Overview of vaccination program</p>
         </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Page Title */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-            <p className="text-muted-foreground mt-1">Overview of vaccination program</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleRefresh}
-              disabled={loading}
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-            <Button 
-              size="sm" 
-              className="bg-gradient-to-r from-blue-600 to-emerald-500 hover:opacity-90"
-              onClick={() => setShowAddVaccination(true)}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Vaccination
-            </Button>
-          </div>
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRefresh}
+            disabled={loading}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button 
+            size="sm" 
+            className="bg-gradient-to-r from-blue-600 to-emerald-500 hover:opacity-90"
+            onClick={() => setShowAddVaccination(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Vaccination
+          </Button>
         </div>
+      </div>
 
-        {/* Filters */}
-        <DashboardFilters
-          filters={filters}
-          onChange={handleFilterChange}
-          onReset={handleFilterReset}
-        />
+      {/* Filters */}
+      <DashboardFilters
+        filters={filters}
+        onChange={handleFilterChange}
+        onReset={handleFilterReset}
+      />
 
-        {/* Error State */}
-        {error && (
-          <div className="mb-6 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-            <p className="text-red-600 dark:text-red-400">{error}</p>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="mt-2"
-              onClick={handleRefresh}
-            >
-              Try Again
-            </Button>
-          </div>
-        )}
+      {/* Error State */}
+      {error && (
+        <div className="mb-6 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+          <p className="text-red-600 dark:text-red-400">{error}</p>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="mt-2"
+            onClick={handleRefresh}
+          >
+            Try Again
+          </Button>
+        </div>
+      )}
 
-        {/* Stats Cards */}
-        {loading && !stats ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-32 rounded-xl bg-card border border-border animate-pulse">
-                <div className="p-6">
-                  <div className="h-4 w-24 bg-muted rounded mb-4"></div>
-                  <div className="h-8 w-16 bg-muted rounded"></div>
-                </div>
+      {/* Stats Cards */}
+      {loading && !stats ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-32 rounded-xl bg-card border border-border animate-pulse">
+              <div className="p-6">
+                <div className="h-4 w-24 bg-muted rounded mb-4"></div>
+                <div className="h-8 w-16 bg-muted rounded"></div>
               </div>
-            ))}
-          </div>
-        ) : stats ? (
-          <StatsCards
-            totalVaccinations={stats.total_vaccinations}
-            weekCount={stats.week_count}
-            todayCount={stats.today_count}
-            monthCount={stats.month_count}
-          />
-        ) : null}
-
-        {/* Charts Row 1 */}
-        <div className="mt-8 grid gap-6 lg:grid-cols-2">
-          <VaccinationTrendChart 
-            data={trendData} 
-            loading={loading && trendData.length === 0} 
-          />
-          <VaccineTypeChart 
-            data={vaccineStats} 
-            loading={loading && vaccineStats.length === 0} 
-          />
+            </div>
+          ))}
         </div>
+      ) : stats ? (
+        <StatsCards
+          totalVaccinations={stats.total_vaccinations}
+          weekCount={stats.week_count}
+          todayCount={stats.today_count}
+          monthCount={stats.month_count}
+        />
+      ) : null}
 
-        {/* Charts Row 2 */}
-        <div className="mt-6 grid gap-6 lg:grid-cols-2">
-          <AgeGroupChart 
-            data={ageGroupStats} 
-            loading={loading && ageGroupStats.length === 0} 
-          />
-          <DistrictCoverage 
-            data={districtStats} 
-            loading={loading && districtStats.length === 0} 
-          />
-        </div>
+      {/* Charts Row 1 */}
+      <div className="mt-8 grid gap-6 lg:grid-cols-2">
+        <VaccinationTrendChart 
+          data={trendData} 
+          loading={loading && trendData.length === 0} 
+        />
+        <VaccineTypeChart 
+          data={vaccineStats} 
+          loading={loading && vaccineStats.length === 0} 
+        />
+      </div>
 
-        {/* Recent Vaccinations Table */}
-        <div className="mt-6">
-          <RecentVaccinationsTable 
-            key={`${refreshKey}-${filterKey}`} 
-            initialLimit={10} 
-            filters={currentApiFilters}
-          />
-        </div>
-      </main>
+      {/* Charts Row 2 */}
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <AgeGroupChart 
+          data={ageGroupStats} 
+          loading={loading && ageGroupStats.length === 0} 
+        />
+        <DistrictCoverage 
+          data={districtStats} 
+          loading={loading && districtStats.length === 0} 
+        />
+      </div>
+
+      {/* Recent Vaccinations Table */}
+      <div className="mt-6">
+        <RecentVaccinationsTable 
+          key={`${refreshKey}-${filterKey}`} 
+          initialLimit={10} 
+          filters={currentApiFilters}
+        />
+      </div>
 
       {/* Add Vaccination Modal */}
       <AddVaccinationModal 
