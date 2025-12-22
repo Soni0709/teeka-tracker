@@ -13,7 +13,8 @@ import {
   getVaccinationByVaccineType,
   getVaccinationByDistrict,
   getVaccinationByAgeGroup,
-  type DashboardSummary 
+  type DashboardSummary,
+  type DashboardFilterParams
 } from '@/lib/api'
 
 // Components
@@ -23,13 +24,26 @@ import {
   VaccineTypeChart,
   AgeGroupChart,
   DistrictCoverage,
-  RecentVaccinationsTable
+  RecentVaccinationsTable,
+  DashboardFilters,
+  defaultFilters,
+  type FilterValues
 } from '@/components/dashboard'
 
 import { AddVaccinationModal } from '@/components/forms'
 
 interface DashboardProps {
   userProfile: UserProfile | null
+}
+
+// Helper to convert FilterValues to API params
+function getApiFilters(filters: FilterValues): DashboardFilterParams {
+  const apiFilters: DashboardFilterParams = {}
+  if (filters.startDate) apiFilters.startDate = filters.startDate
+  if (filters.endDate) apiFilters.endDate = filters.endDate
+  if (filters.district_id) apiFilters.district_id = filters.district_id
+  if (filters.vaccine_type_id) apiFilters.vaccine_type_id = filters.vaccine_type_id
+  return apiFilters
 }
 
 export default function Dashboard({ userProfile }: DashboardProps) {
@@ -44,50 +58,59 @@ export default function Dashboard({ userProfile }: DashboardProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   
+  // Filter state
+  const [filters, setFilters] = useState<FilterValues>(defaultFilters)
+  
   // Modal state
   const [showAddVaccination, setShowAddVaccination] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
 
-  // Fetch all dashboard data
-  const fetchDashboardData = async () => {
-    setLoading(true)
-    setError(null)
-    
-    try {
-      // Fetch all data in parallel
-      const [
-        dashboardStats,
-        trend,
-        byVaccine,
-        byDistrict,
-        byAgeGroup
-      ] = await Promise.all([
-        getDashboardStats(),
-        getVaccinationTrend(7),
-        getVaccinationByVaccineType(),
-        getVaccinationByDistrict(),
-        getVaccinationByAgeGroup()
-      ])
-      
-      if (dashboardStats) {
-        setStats(dashboardStats)
-      }
-      setTrendData(trend)
-      setVaccineStats(byVaccine)
-      setDistrictStats(byDistrict)
-      setAgeGroupStats(byAgeGroup)
-      
-    } catch (err) {
-      console.error('Error fetching dashboard:', err)
-      setError('Something went wrong. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
+  // Create stable filter key for useEffect dependency
+  const filterKey = JSON.stringify(filters)
 
+  // Fetch all dashboard data
   useEffect(() => {
+    const fetchDashboardData = async () => {
+      setLoading(true)
+      setError(null)
+      
+      const apiFilters = getApiFilters(filters)
+      const hasFilters = Object.keys(apiFilters).length > 0
+      
+      try {
+        const [
+          dashboardStats,
+          trend,
+          byVaccine,
+          byDistrict,
+          byAgeGroup
+        ] = await Promise.all([
+          getDashboardStats(hasFilters ? apiFilters : undefined),
+          getVaccinationTrend(7, hasFilters ? apiFilters : undefined),
+          getVaccinationByVaccineType(hasFilters ? apiFilters : undefined),
+          getVaccinationByDistrict(hasFilters ? apiFilters : undefined),
+          getVaccinationByAgeGroup(hasFilters ? apiFilters : undefined)
+        ])
+        
+        if (dashboardStats) {
+          setStats(dashboardStats)
+        }
+        setTrendData(trend)
+        setVaccineStats(byVaccine)
+        setDistrictStats(byDistrict)
+        setAgeGroupStats(byAgeGroup)
+        
+      } catch (err) {
+        console.error('Error fetching dashboard:', err)
+        setError('Something went wrong. Please try again.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
     fetchDashboardData()
-  }, [refreshKey])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterKey, refreshKey])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -95,9 +118,22 @@ export default function Dashboard({ userProfile }: DashboardProps) {
   }
 
   const handleVaccinationAdded = () => {
-    // Refresh all dashboard data
     setRefreshKey(prev => prev + 1)
   }
+
+  const handleFilterChange = (newFilters: FilterValues) => {
+    setFilters(newFilters)
+  }
+
+  const handleFilterReset = () => {
+    setFilters(defaultFilters)
+  }
+
+  const handleRefresh = () => {
+    setRefreshKey(prev => prev + 1)
+  }
+
+  const currentApiFilters = getApiFilters(filters)
 
   return (
     <div className="min-h-screen bg-background">
@@ -127,7 +163,7 @@ export default function Dashboard({ userProfile }: DashboardProps) {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Title */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
             <p className="text-muted-foreground mt-1">Overview of vaccination program</p>
@@ -136,7 +172,7 @@ export default function Dashboard({ userProfile }: DashboardProps) {
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={fetchDashboardData}
+              onClick={handleRefresh}
               disabled={loading}
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
@@ -153,6 +189,13 @@ export default function Dashboard({ userProfile }: DashboardProps) {
           </div>
         </div>
 
+        {/* Filters */}
+        <DashboardFilters
+          filters={filters}
+          onChange={handleFilterChange}
+          onReset={handleFilterReset}
+        />
+
         {/* Error State */}
         {error && (
           <div className="mb-6 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
@@ -161,7 +204,7 @@ export default function Dashboard({ userProfile }: DashboardProps) {
               variant="outline" 
               size="sm" 
               className="mt-2"
-              onClick={fetchDashboardData}
+              onClick={handleRefresh}
             >
               Try Again
             </Button>
@@ -215,7 +258,11 @@ export default function Dashboard({ userProfile }: DashboardProps) {
 
         {/* Recent Vaccinations Table */}
         <div className="mt-6">
-          <RecentVaccinationsTable key={refreshKey} initialLimit={10} />
+          <RecentVaccinationsTable 
+            key={`${refreshKey}-${filterKey}`} 
+            initialLimit={10} 
+            filters={currentApiFilters}
+          />
         </div>
       </main>
 
