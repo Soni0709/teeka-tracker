@@ -1,20 +1,29 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LogOut, RefreshCw } from 'lucide-react'
+import { LogOut, Stethoscope, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { supabase } from '@/lib/supabase'
-import Logo from '@/components/common/Logo'
-import type { UserProfile } from '@/types'
+import type { UserProfile, TrendData, VaccineTypeStats, DistrictStats, AgeGroupStats } from '@/types'
 
 // API
 import { 
   getDashboardStats, 
+  getVaccinationTrend,
+  getVaccinationByVaccineType,
+  getVaccinationByDistrict,
+  getVaccinationByAgeGroup,
   type DashboardSummary 
 } from '@/lib/api'
 
 // Components
-import StatsCards from '@/components/dashboard/StatsCards'
+import {
+  StatsCards,
+  VaccinationTrendChart,
+  VaccineTypeChart,
+  AgeGroupChart,
+  DistrictCoverage
+} from '@/components/dashboard'
 
 interface DashboardProps {
   userProfile: UserProfile | null
@@ -25,22 +34,42 @@ export default function Dashboard({ userProfile }: DashboardProps) {
   
   // State
   const [stats, setStats] = useState<DashboardSummary | null>(null)
+  const [trendData, setTrendData] = useState<TrendData[]>([])
+  const [vaccineStats, setVaccineStats] = useState<VaccineTypeStats[]>([])
+  const [districtStats, setDistrictStats] = useState<DistrictStats[]>([])
+  const [ageGroupStats, setAgeGroupStats] = useState<AgeGroupStats[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Fetch dashboard data
+  // Fetch all dashboard data
   const fetchDashboardData = async () => {
     setLoading(true)
     setError(null)
     
     try {
-      const dashboardStats = await getDashboardStats()
+      // Fetch all data in parallel
+      const [
+        dashboardStats,
+        trend,
+        byVaccine,
+        byDistrict,
+        byAgeGroup
+      ] = await Promise.all([
+        getDashboardStats(),
+        getVaccinationTrend(7),
+        getVaccinationByVaccineType(),
+        getVaccinationByDistrict(),
+        getVaccinationByAgeGroup()
+      ])
       
       if (dashboardStats) {
         setStats(dashboardStats)
-      } else {
-        setError('Failed to load dashboard data')
       }
+      setTrendData(trend)
+      setVaccineStats(byVaccine)
+      setDistrictStats(byDistrict)
+      setAgeGroupStats(byAgeGroup)
+      
     } catch (err) {
       console.error('Error fetching dashboard:', err)
       setError('Something went wrong. Please try again.')
@@ -63,7 +92,12 @@ export default function Dashboard({ userProfile }: DashboardProps) {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Logo size="md" clickable={false} />
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-blue-600 to-emerald-500 shadow-lg">
+              <Stethoscope className="h-5 w-5 text-white" />
+            </div>
+            <span className="text-xl font-bold text-foreground">TeekaSetu</span>
+          </div>
 
           <div className="flex items-center gap-4">
             <ThemeToggle />
@@ -112,8 +146,8 @@ export default function Dashboard({ userProfile }: DashboardProps) {
           </div>
         )}
 
-        {/* Loading State */}
-        {loading && !stats && (
+        {/* Stats Cards */}
+        {loading && !stats ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="h-32 rounded-xl bg-card border border-border animate-pulse">
@@ -124,38 +158,40 @@ export default function Dashboard({ userProfile }: DashboardProps) {
               </div>
             ))}
           </div>
-        )}
-
-        {/* Stats Cards */}
-        {stats && (
+        ) : stats ? (
           <StatsCards
             totalVaccinations={stats.total_vaccinations}
             weekCount={stats.week_count}
             todayCount={stats.today_count}
             monthCount={stats.month_count}
           />
-        )}
+        ) : null}
 
-        {/* Placeholder for Charts */}
+        {/* Charts Row 1 */}
         <div className="mt-8 grid gap-6 lg:grid-cols-2">
-          <div className="p-8 rounded-xl bg-card border border-border text-center">
-            <p className="text-muted-foreground">📈 Vaccination Trend Chart - Coming Next</p>
-          </div>
-          <div className="p-8 rounded-xl bg-card border border-border text-center">
-            <p className="text-muted-foreground">🍩 By Vaccine Type Chart - Coming Next</p>
-          </div>
+          <VaccinationTrendChart 
+            data={trendData} 
+            loading={loading && trendData.length === 0} 
+          />
+          <VaccineTypeChart 
+            data={vaccineStats} 
+            loading={loading && vaccineStats.length === 0} 
+          />
         </div>
 
+        {/* Charts Row 2 */}
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
-          <div className="p-8 rounded-xl bg-card border border-border text-center">
-            <p className="text-muted-foreground">📊 By Age Group Chart - Coming Next</p>
-          </div>
-          <div className="p-8 rounded-xl bg-card border border-border text-center">
-            <p className="text-muted-foreground">🗺️ District Coverage - Coming Next</p>
-          </div>
+          <AgeGroupChart 
+            data={ageGroupStats} 
+            loading={loading && ageGroupStats.length === 0} 
+          />
+          <DistrictCoverage 
+            data={districtStats} 
+            loading={loading && districtStats.length === 0} 
+          />
         </div>
 
-        {/* Placeholder for Recent Vaccinations */}
+        {/* Placeholder for Recent Vaccinations Table */}
         <div className="mt-6 p-8 rounded-xl bg-card border border-border text-center">
           <p className="text-muted-foreground">📋 Recent Vaccinations Table - Coming Next</p>
         </div>

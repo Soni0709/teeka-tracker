@@ -1,1 +1,5 @@
 export { default as StatsCards } from './StatsCards'
+export { default as VaccinationTrendChart } from './VaccinationTrendChart'
+export { default as VaccineTypeChart } from './VaccineTypeChart'
+export { default as AgeGroupChart } from './AgeGroupChart'
+export { default as DistrictCoverage } from './DistrictCoverage'
