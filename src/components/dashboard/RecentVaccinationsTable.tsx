@@ -2,34 +2,35 @@ import { useState, useEffect } from 'react'
 import { Calendar, User, Syringe, MapPin, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { getRecentVaccinations, type RecentVaccination } from '@/lib/api'
+import { getRecentVaccinations, type RecentVaccination, type DashboardFilterParams } from '@/lib/api'
 
 interface RecentVaccinationsTableProps {
   initialLimit?: number
+  filters?: DashboardFilterParams
 }
 
-export default function RecentVaccinationsTable({ initialLimit = 10 }: RecentVaccinationsTableProps) {
+export default function RecentVaccinationsTable({ initialLimit = 10, filters }: RecentVaccinationsTableProps) {
   const [vaccinations, setVaccinations] = useState<RecentVaccination[]>([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const pageSize = initialLimit
 
-  const fetchData = async () => {
-    setLoading(true)
-    try {
-      // For now, fetch more data and paginate client-side
-      const data = await getRecentVaccinations(50)
-      setVaccinations(data)
-    } catch (error) {
-      console.error('Error fetching vaccinations:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true)
+      try {
+        const data = await getRecentVaccinations(50, filters)
+        setVaccinations(data)
+        setPage(1)
+      } catch (error) {
+        console.error('Error fetching vaccinations:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
     fetchData()
-  }, [])
+  }, [filters])
 
   // Client-side pagination
   const totalPages = Math.ceil(vaccinations.length / pageSize)
@@ -62,6 +63,20 @@ export default function RecentVaccinationsTable({ initialLimit = 10 }: RecentVac
                 <div key={i} className="h-12 bg-muted rounded animate-pulse" />
               ))}
             </div>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (vaccinations.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center py-8">
+            <Syringe className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="font-medium text-foreground mb-1">No vaccinations found</h3>
+            <p className="text-sm text-muted-foreground">Try adjusting your filters</p>
           </div>
         </CardContent>
       </Card>
