@@ -22,7 +22,8 @@ import {
   VaccinationTrendChart,
   VaccineTypeChart,
   AgeGroupChart,
-  DistrictCoverage
+  DistrictCoverage,
+  RecentVaccinationsTable
 } from '@/components/dashboard'
 
 interface DashboardProps {
@@ -191,9 +192,9 @@ export default function Dashboard({ userProfile }: DashboardProps) {
           />
         </div>
 
-        {/* Placeholder for Recent Vaccinations Table */}
-        <div className="mt-6 p-8 rounded-xl bg-card border border-border text-center">
-          <p className="text-muted-foreground">📋 Recent Vaccinations Table - Coming Next</p>
+        {/* Recent Vaccinations Table */}
+        <div className="mt-6">
+          <RecentVaccinationsTable initialLimit={10} />
         </div>
       </main>
     </div>
