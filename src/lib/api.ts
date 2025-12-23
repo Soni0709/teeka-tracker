@@ -478,13 +478,24 @@ export async function addVaccination(vaccination: NewVaccination): Promise<{ suc
   if (!user) {
     return { success: false, error: 'User not authenticated' }
   }
+
+  // Clean up empty strings - convert to null for UUID and optional fields
+  const cleanData = {
+    beneficiary_id: vaccination.beneficiary_id,
+    vaccine_type_id: vaccination.vaccine_type_id,
+    dose_number: vaccination.dose_number,
+    date_given: vaccination.date_given,
+    district_id: vaccination.district_id,
+    block_id: vaccination.block_id || null,
+    village: vaccination.village || null,
+    batch_number: vaccination.batch_number || null,
+    notes: vaccination.notes || null,
+    administered_by: user.id
+  }
   
   const { error } = await supabase
     .from('vaccinations')
-    .insert({
-      ...vaccination,
-      administered_by: user.id
-    })
+    .insert(cleanData)
   
   if (error) {
     console.error('Error adding vaccination:', error)
@@ -516,13 +527,24 @@ export async function addBeneficiary(beneficiary: NewBeneficiary): Promise<{ suc
   if (!user) {
     return { success: false, error: 'User not authenticated' }
   }
+
+  // Clean up empty strings - convert to null for UUID fields
+  const cleanData = {
+    name: beneficiary.name,
+    date_of_birth: beneficiary.date_of_birth,
+    gender: beneficiary.gender,
+    guardian_name: beneficiary.guardian_name || null,
+    guardian_phone: beneficiary.guardian_phone || null,
+    address: beneficiary.address || null,
+    district_id: beneficiary.district_id,
+    block_id: beneficiary.block_id || null,
+    village: beneficiary.village || null,
+    created_by: user.id
+  }
   
   const { data, error } = await supabase
     .from('beneficiaries')
-    .insert({
-      ...beneficiary,
-      created_by: user.id
-    })
+    .insert(cleanData)
     .select('id')
     .single()
   
@@ -575,4 +597,236 @@ export async function searchBeneficiaries(searchTerm: string): Promise<Beneficia
     guardian_name: item.guardian_name || '',
     district_name: item.districts?.name || ''
   }))
+}
+
+// =============================================
+// BENEFICIARIES - FULL CRUD
+// =============================================
+
+export interface BeneficiaryWithDetails {
+  id: string
+  name: string
+  date_of_birth: string
+  gender: 'male' | 'female' | 'other'
+  guardian_name: string
+  guardian_phone: string
+  address: string
+  district_id: string
+  district_name: string
+  block_id: string
+  block_name: string
+  village: string
+  vaccination_count: number
+  created_at: string
+}
+
+export interface BeneficiaryFilters {
+  search?: string
+  district_id?: string
+  gender?: string
+}
+
+export interface PaginatedBeneficiaries {
+  data: BeneficiaryWithDetails[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
+export async function getBeneficiaries(
+  page: number = 1,
+  pageSize: number = 10,
+  filters?: BeneficiaryFilters
+): Promise<PaginatedBeneficiaries> {
+  const from = (page - 1) * pageSize
+  const to = from + pageSize - 1
+
+  let query = supabase
+    .from('beneficiaries')
+    .select(`
+      id,
+      name,
+      date_of_birth,
+      gender,
+      guardian_name,
+      guardian_phone,
+      address,
+      district_id,
+      block_id,
+      village,
+      created_at,
+      districts(name),
+      blocks(name)
+    `, { count: 'exact' })
+
+  // Apply filters
+  if (filters?.search) {
+    query = query.or(`name.ilike.%${filters.search}%,guardian_name.ilike.%${filters.search}%,guardian_phone.ilike.%${filters.search}%`)
+  }
+  if (filters?.district_id) {
+    query = query.eq('district_id', filters.district_id)
+  }
+  if (filters?.gender) {
+    query = query.eq('gender', filters.gender)
+  }
+
+  query = query
+    .order('created_at', { ascending: false })
+    .range(from, to)
+
+  const { data, count, error } = await query
+
+  if (error) {
+    console.error('Error fetching beneficiaries:', error)
+    return { data: [], total: 0, page, pageSize, totalPages: 0 }
+  }
+
+  // Get vaccination counts
+  const beneficiaryIds = (data || []).map((b: any) => b.id)
+  let vaccinationCounts: Record<string, number> = {}
+
+  if (beneficiaryIds.length > 0) {
+    const { data: vaccinations } = await supabase
+      .from('vaccinations')
+      .select('beneficiary_id')
+      .in('beneficiary_id', beneficiaryIds)
+
+    if (vaccinations) {
+      vaccinationCounts = vaccinations.reduce((acc: Record<string, number>, v: any) => {
+        acc[v.beneficiary_id] = (acc[v.beneficiary_id] || 0) + 1
+        return acc
+      }, {})
+    }
+  }
+
+  const records = (data || []).map((item: any) => ({
+    id: item.id,
+    name: item.name,
+    date_of_birth: item.date_of_birth,
+    gender: item.gender,
+    guardian_name: item.guardian_name || '',
+    guardian_phone: item.guardian_phone || '',
+    address: item.address || '',
+    district_id: item.district_id || '',
+    district_name: item.districts?.name || '',
+    block_id: item.block_id || '',
+    block_name: item.blocks?.name || '',
+    village: item.village || '',
+    vaccination_count: vaccinationCounts[item.id] || 0,
+    created_at: item.created_at
+  }))
+
+  const total = count || 0
+  return {
+    data: records,
+    total,
+    page,
+    pageSize,
+    totalPages: Math.ceil(total / pageSize)
+  }
+}
+
+export async function getBeneficiaryById(id: string): Promise<BeneficiaryWithDetails | null> {
+  const { data, error } = await supabase
+    .from('beneficiaries')
+    .select(`
+      id,
+      name,
+      date_of_birth,
+      gender,
+      guardian_name,
+      guardian_phone,
+      address,
+      district_id,
+      block_id,
+      village,
+      created_at,
+      districts(name),
+      blocks(name)
+    `)
+    .eq('id', id)
+    .single()
+
+  if (error) {
+    console.error('Error fetching beneficiary:', error)
+    return null
+  }
+
+  // Get vaccination count
+  const { count } = await supabase
+    .from('vaccinations')
+    .select('id', { count: 'exact', head: true })
+    .eq('beneficiary_id', id)
+
+  return {
+    id: data.id,
+    name: data.name,
+    date_of_birth: data.date_of_birth,
+    gender: data.gender,
+    guardian_name: data.guardian_name || '',
+    guardian_phone: data.guardian_phone || '',
+    address: data.address || '',
+    district_id: data.district_id || '',
+    district_name: (data.districts as any)?.name || '',
+    block_id: data.block_id || '',
+    block_name: (data.blocks as any)?.name || '',
+    village: data.village || '',
+    vaccination_count: count || 0,
+    created_at: data.created_at
+  }
+}
+
+export async function updateBeneficiary(
+  id: string,
+  updates: Partial<NewBeneficiary>
+): Promise<{ success: boolean; error?: string }> {
+  // Clean up empty strings - convert to null for UUID and optional fields
+  const cleanUpdates: Record<string, any> = {}
+  
+  if (updates.name !== undefined) cleanUpdates.name = updates.name
+  if (updates.date_of_birth !== undefined) cleanUpdates.date_of_birth = updates.date_of_birth
+  if (updates.gender !== undefined) cleanUpdates.gender = updates.gender
+  if (updates.guardian_name !== undefined) cleanUpdates.guardian_name = updates.guardian_name || null
+  if (updates.guardian_phone !== undefined) cleanUpdates.guardian_phone = updates.guardian_phone || null
+  if (updates.address !== undefined) cleanUpdates.address = updates.address || null
+  if (updates.district_id !== undefined) cleanUpdates.district_id = updates.district_id
+  if (updates.block_id !== undefined) cleanUpdates.block_id = updates.block_id || null
+  if (updates.village !== undefined) cleanUpdates.village = updates.village || null
+
+  const { error } = await supabase
+    .from('beneficiaries')
+    .update(cleanUpdates)
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error updating beneficiary:', error)
+    return { success: false, error: error.message }
+  }
+
+  return { success: true }
+}
+
+export async function deleteBeneficiary(id: string): Promise<{ success: boolean; error?: string }> {
+  // Check if beneficiary has vaccinations
+  const { count } = await supabase
+    .from('vaccinations')
+    .select('id', { count: 'exact', head: true })
+    .eq('beneficiary_id', id)
+
+  if (count && count > 0) {
+    return { success: false, error: 'Cannot delete beneficiary with vaccination records' }
+  }
+
+  const { error } = await supabase
+    .from('beneficiaries')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error deleting beneficiary:', error)
+    return { success: false, error: error.message }
+  }
+
+  return { success: true }
 }
