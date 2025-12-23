@@ -830,3 +830,198 @@ export async function deleteBeneficiary(id: string): Promise<{ success: boolean;
 
   return { success: true }
 }
+
+// =============================================
+// VACCINATIONS - FULL CRUD
+// =============================================
+
+export interface VaccinationWithDetails {
+  id: string
+  beneficiary_id: string
+  beneficiary_name: string
+  beneficiary_dob: string
+  beneficiary_gender: string
+  vaccine_type_id: string
+  vaccine_name: string
+  dose_number: number
+  date_given: string
+  district_id: string
+  district_name: string
+  block_id: string
+  block_name: string
+  village: string
+  batch_number: string
+  notes: string
+  administered_by: string
+  created_at: string
+}
+
+export interface VaccinationFilters {
+  search?: string
+  district_id?: string
+  vaccine_type_id?: string
+  start_date?: string
+  end_date?: string
+}
+
+export interface PaginatedVaccinations {
+  data: VaccinationWithDetails[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
+export async function getVaccinations(
+  page: number = 1,
+  pageSize: number = 10,
+  filters?: VaccinationFilters
+): Promise<PaginatedVaccinations> {
+  const from = (page - 1) * pageSize
+  const to = from + pageSize - 1
+
+  let query = supabase
+    .from('vaccinations')
+    .select(`
+      id,
+      beneficiary_id,
+      vaccine_type_id,
+      dose_number,
+      date_given,
+      district_id,
+      block_id,
+      village,
+      batch_number,
+      notes,
+      administered_by,
+      created_at,
+      beneficiaries!inner(name, date_of_birth, gender),
+      vaccine_types!inner(name),
+      districts!inner(name),
+      blocks(name)
+    `, { count: 'exact' })
+
+  // Apply filters
+  if (filters?.search) {
+    query = query.ilike('beneficiaries.name', `%${filters.search}%`)
+  }
+  if (filters?.district_id) {
+    query = query.eq('district_id', filters.district_id)
+  }
+  if (filters?.vaccine_type_id) {
+    query = query.eq('vaccine_type_id', filters.vaccine_type_id)
+  }
+  if (filters?.start_date) {
+    query = query.gte('date_given', filters.start_date)
+  }
+  if (filters?.end_date) {
+    query = query.lte('date_given', filters.end_date)
+  }
+
+  query = query
+    .order('date_given', { ascending: false })
+    .order('created_at', { ascending: false })
+    .range(from, to)
+
+  const { data, count, error } = await query
+
+  if (error) {
+    console.error('Error fetching vaccinations:', error)
+    return { data: [], total: 0, page, pageSize, totalPages: 0 }
+  }
+
+  const records = (data || []).map((item: any) => ({
+    id: item.id,
+    beneficiary_id: item.beneficiary_id,
+    beneficiary_name: item.beneficiaries?.name || '',
+    beneficiary_dob: item.beneficiaries?.date_of_birth || '',
+    beneficiary_gender: item.beneficiaries?.gender || '',
+    vaccine_type_id: item.vaccine_type_id,
+    vaccine_name: item.vaccine_types?.name || '',
+    dose_number: item.dose_number,
+    date_given: item.date_given,
+    district_id: item.district_id || '',
+    district_name: item.districts?.name || '',
+    block_id: item.block_id || '',
+    block_name: item.blocks?.name || '',
+    village: item.village || '',
+    batch_number: item.batch_number || '',
+    notes: item.notes || '',
+    administered_by: item.administered_by || '',
+    created_at: item.created_at
+  }))
+
+  const total = count || 0
+  return {
+    data: records,
+    total,
+    page,
+    pageSize,
+    totalPages: Math.ceil(total / pageSize)
+  }
+}
+
+export async function getVaccinationById(id: string): Promise<VaccinationWithDetails | null> {
+  const { data, error } = await supabase
+    .from('vaccinations')
+    .select(`
+      id,
+      beneficiary_id,
+      vaccine_type_id,
+      dose_number,
+      date_given,
+      district_id,
+      block_id,
+      village,
+      batch_number,
+      notes,
+      administered_by,
+      created_at,
+      beneficiaries!inner(name, date_of_birth, gender),
+      vaccine_types!inner(name),
+      districts!inner(name),
+      blocks(name)
+    `)
+    .eq('id', id)
+    .single()
+
+  if (error) {
+    console.error('Error fetching vaccination:', error)
+    return null
+  }
+
+  return {
+    id: data.id,
+    beneficiary_id: data.beneficiary_id,
+    beneficiary_name: (data.beneficiaries as any)?.name || '',
+    beneficiary_dob: (data.beneficiaries as any)?.date_of_birth || '',
+    beneficiary_gender: (data.beneficiaries as any)?.gender || '',
+    vaccine_type_id: data.vaccine_type_id,
+    vaccine_name: (data.vaccine_types as any)?.name || '',
+    dose_number: data.dose_number,
+    date_given: data.date_given,
+    district_id: data.district_id || '',
+    district_name: (data.districts as any)?.name || '',
+    block_id: data.block_id || '',
+    block_name: (data.blocks as any)?.name || '',
+    village: data.village || '',
+    batch_number: data.batch_number || '',
+    notes: data.notes || '',
+    administered_by: data.administered_by || '',
+    created_at: data.created_at
+  }
+}
+
+export async function deleteVaccination(id: string): Promise<{ success: boolean; error?: string }> {
+  const { error } = await supabase
+    .from('vaccinations')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error deleting vaccination:', error)
+    return { success: false, error: error.message }
+  }
+
+  return { success: true }
+}
