@@ -1025,3 +1025,191 @@ export async function deleteVaccination(id: string): Promise<{ success: boolean;
 
   return { success: true }
 }
+
+// =============================================
+// REPORTS - DATA AGGREGATION
+// =============================================
+
+export interface ReportFilters {
+  start_date?: string
+  end_date?: string
+  district_id?: string
+}
+
+export interface VaccineSummaryRow {
+  vaccine_name: string
+  total_doses: number
+  dose_1: number
+  dose_2: number
+  dose_3: number
+  dose_4: number
+}
+
+export interface DistrictCoverageRow {
+  district_name: string
+  target_population: number
+  total_vaccinations: number
+  unique_beneficiaries: number
+  coverage_percentage: number
+}
+
+export interface MonthlyReportRow {
+  month: string
+  total_vaccinations: number
+  unique_beneficiaries: number
+  male_count: number
+  female_count: number
+}
+
+export async function getVaccinationSummaryReport(filters?: ReportFilters): Promise<VaccineSummaryRow[]> {
+  let query = supabase
+    .from('vaccinations')
+    .select(`
+      vaccine_type_id,
+      dose_number,
+      vaccine_types!inner(name)
+    `)
+
+  if (filters?.start_date) query = query.gte('date_given', filters.start_date)
+  if (filters?.end_date) query = query.lte('date_given', filters.end_date)
+  if (filters?.district_id) query = query.eq('district_id', filters.district_id)
+
+  const { data, error } = await query
+
+  if (error) {
+    console.error('Error fetching vaccination summary:', error)
+    return []
+  }
+
+  // Aggregate by vaccine type
+  const summaryMap: Record<string, VaccineSummaryRow> = {}
+  
+  (data || []).forEach((item: any) => {
+    const vaccineName = item.vaccine_types?.name || 'Unknown'
+    if (!summaryMap[vaccineName]) {
+      summaryMap[vaccineName] = {
+        vaccine_name: vaccineName,
+        total_doses: 0,
+        dose_1: 0,
+        dose_2: 0,
+        dose_3: 0,
+        dose_4: 0
+      }
+    }
+    summaryMap[vaccineName].total_doses++
+    const doseKey = `dose_${item.dose_number}` as keyof VaccineSummaryRow
+    if (doseKey in summaryMap[vaccineName]) {
+      (summaryMap[vaccineName][doseKey] as number)++
+    }
+  })
+
+  return Object.values(summaryMap).sort((a, b) => b.total_doses - a.total_doses)
+}
+
+export async function getDistrictCoverageReport(filters?: ReportFilters): Promise<DistrictCoverageRow[]> {
+  // Get all districts first
+  const { data: districts } = await supabase
+    .from('districts')
+    .select('id, name, target_population')
+    .order('name')
+
+  if (!districts) return []
+
+  // Get vaccination data
+  let query = supabase
+    .from('vaccinations')
+    .select('district_id, beneficiary_id')
+
+  if (filters?.start_date) query = query.gte('date_given', filters.start_date)
+  if (filters?.end_date) query = query.lte('date_given', filters.end_date)
+  if (filters?.district_id) query = query.eq('district_id', filters.district_id)
+
+  const { data: vaccinations, error } = await query
+
+  if (error) {
+    console.error('Error fetching coverage data:', error)
+    return []
+  }
+
+  // Aggregate by district
+  const districtStats: Record<string, { total: number; beneficiaries: Set<string> }> = {}
+  
+  (vaccinations || []).forEach((v: any) => {
+    if (!v.district_id) return
+    if (!districtStats[v.district_id]) {
+      districtStats[v.district_id] = { total: 0, beneficiaries: new Set() }
+    }
+    districtStats[v.district_id].total++
+    districtStats[v.district_id].beneficiaries.add(v.beneficiary_id)
+  })
+
+  // Build result
+  const result: DistrictCoverageRow[] = districts
+    .filter(d => !filters?.district_id || d.id === filters.district_id)
+    .map(d => {
+      const stats = districtStats[d.id] || { total: 0, beneficiaries: new Set() }
+      const uniqueBeneficiaries = stats.beneficiaries.size
+      return {
+        district_name: d.name,
+        target_population: d.target_population,
+        total_vaccinations: stats.total,
+        unique_beneficiaries: uniqueBeneficiaries,
+        coverage_percentage: d.target_population > 0 
+          ? Math.round((uniqueBeneficiaries / d.target_population) * 10000) / 100
+          : 0
+      }
+    })
+
+  return result.sort((a, b) => b.coverage_percentage - a.coverage_percentage)
+}
+
+export async function getMonthlyReport(filters?: ReportFilters): Promise<MonthlyReportRow[]> {
+  let query = supabase
+    .from('vaccinations')
+    .select(`
+      date_given,
+      beneficiary_id,
+      beneficiaries!inner(gender)
+    `)
+
+  if (filters?.start_date) query = query.gte('date_given', filters.start_date)
+  if (filters?.end_date) query = query.lte('date_given', filters.end_date)
+  if (filters?.district_id) query = query.eq('district_id', filters.district_id)
+
+  const { data, error } = await query
+
+  if (error) {
+    console.error('Error fetching monthly data:', error)
+    return []
+  }
+
+  // Aggregate by month
+  const monthlyMap: Record<string, {
+    total: number
+    beneficiaries: Set<string>
+    male: number
+    female: number
+  }> = {}
+
+  (data || []).forEach((item: any) => {
+    const month = item.date_given.substring(0, 7) // YYYY-MM
+    if (!monthlyMap[month]) {
+      monthlyMap[month] = { total: 0, beneficiaries: new Set(), male: 0, female: 0 }
+    }
+    monthlyMap[month].total++
+    monthlyMap[month].beneficiaries.add(item.beneficiary_id)
+    if (item.beneficiaries?.gender === 'male') monthlyMap[month].male++
+    else if (item.beneficiaries?.gender === 'female') monthlyMap[month].female++
+  })
+
+  // Convert to array and sort by month
+  return Object.entries(monthlyMap)
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .map(([month, stats]) => ({
+      month,
+      total_vaccinations: stats.total,
+      unique_beneficiaries: stats.beneficiaries.size,
+      male_count: stats.male,
+      female_count: stats.female
+    }))
+}
