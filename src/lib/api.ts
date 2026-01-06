@@ -1068,12 +1068,16 @@ export async function getVaccinationSummaryReport(filters?: ReportFilters): Prom
     .select(`
       vaccine_type_id,
       dose_number,
+      date_given,
+      district_id,
       vaccine_types!inner(name)
     `)
 
   if (filters?.start_date) query = query.gte('date_given', filters.start_date)
   if (filters?.end_date) query = query.lte('date_given', filters.end_date)
-  if (filters?.district_id) query = query.eq('district_id', filters.district_id)
+  if (filters?.district_id && filters.district_id.trim() !== '') {
+    query = query.eq('district_id', filters.district_id)
+  }
 
   const { data, error } = await query
 
@@ -1119,11 +1123,13 @@ export async function getDistrictCoverageReport(filters?: ReportFilters): Promis
   // Get vaccination data
   let query = supabase
     .from('vaccinations')
-    .select('district_id, beneficiary_id')
+    .select('district_id, beneficiary_id, date_given')
 
   if (filters?.start_date) query = query.gte('date_given', filters.start_date)
   if (filters?.end_date) query = query.lte('date_given', filters.end_date)
-  if (filters?.district_id) query = query.eq('district_id', filters.district_id)
+  if (filters?.district_id && filters.district_id.trim() !== '') {
+    query = query.eq('district_id', filters.district_id)
+  }
 
   const { data: vaccinations, error } = await query
 
@@ -1175,7 +1181,9 @@ export async function getMonthlyReport(filters?: ReportFilters): Promise<Monthly
 
   if (filters?.start_date) query = query.gte('date_given', filters.start_date)
   if (filters?.end_date) query = query.lte('date_given', filters.end_date)
-  if (filters?.district_id) query = query.eq('district_id', filters.district_id)
+  if (filters?.district_id && filters.district_id.trim() !== '') {
+    query = query.eq('district_id', filters.district_id)
+  }
 
   const { data, error } = await query
 
