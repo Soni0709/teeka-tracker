@@ -1,3 +1,4 @@
+/* eslint-disable no-unexpected-multiline */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { supabase } from './supabase'
 import type { VaccineType } from '@/types'
@@ -1082,7 +1083,7 @@ export async function getVaccinationSummaryReport(filters?: ReportFilters): Prom
   }
 
   // Aggregate by vaccine type
-  const summaryMap: Record<string, VaccineSummaryRow> = {}
+  const summaryMap: Record<string, VaccineSummaryRow> = {} as Record<string, VaccineSummaryRow>
   
   (data || []).forEach((item: any) => {
     const vaccineName = item.vaccine_types?.name || 'Unknown'
@@ -1132,7 +1133,7 @@ export async function getDistrictCoverageReport(filters?: ReportFilters): Promis
   }
 
   // Aggregate by district
-  const districtStats: Record<string, { total: number; beneficiaries: Set<string> }> = {}
+  const districtStats: Record<string, { total: number; beneficiaries: Set<string> }> = {} as Record<string, { total: number; beneficiaries: Set<string> }>
   
   (vaccinations || []).forEach((v: any) => {
     if (!v.district_id) return
@@ -1189,7 +1190,7 @@ export async function getMonthlyReport(filters?: ReportFilters): Promise<Monthly
     beneficiaries: Set<string>
     male: number
     female: number
-  }> = {}
+  }> = {} as Record<string, { total: number; beneficiaries: Set<string>; male: number; female: number }>
 
   (data || []).forEach((item: any) => {
     const month = item.date_given.substring(0, 7) // YYYY-MM
