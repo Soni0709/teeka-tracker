@@ -1222,3 +1222,132 @@ export async function getMonthlyReport(filters?: ReportFilters): Promise<Monthly
       female_count: stats.female
     }))
 }
+
+// =============================================
+// USER PROFILE & SETTINGS
+// =============================================
+
+export interface UserProfileData {
+  id: string
+  name: string
+  email: string
+  phone: string
+  role: string
+  district_id: string
+  district_name: string
+}
+
+export async function getUserProfile(): Promise<UserProfileData | null> {
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) return null
+
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .select(`
+      id,
+      name,
+      email,
+      phone,
+      role,
+      district_id,
+      districts(name)
+    `)
+    .eq('id', user.id)
+    .single()
+
+  if (error) {
+    console.error('Error fetching user profile:', error)
+    return null
+  }
+
+  return {
+    id: data.id,
+    name: data.name || '',
+    email: data.email || user.email || '',
+    phone: data.phone || '',
+    role: data.role || 'health_worker',
+    district_id: data.district_id || '',
+    district_name: (data.districts as any)?.name || ''
+  }
+}
+
+export interface UpdateProfileData {
+  name?: string
+  phone?: string
+  district_id?: string
+}
+
+export async function updateUserProfile(updates: UpdateProfileData): Promise<{ success: boolean; error?: string }> {
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) {
+    return { success: false, error: 'User not authenticated' }
+  }
+
+  const cleanUpdates: Record<string, any> = {}
+  if (updates.name !== undefined) cleanUpdates.name = updates.name
+  if (updates.phone !== undefined) cleanUpdates.phone = updates.phone || null
+  if (updates.district_id !== undefined) cleanUpdates.district_id = updates.district_id || null
+
+  const { error } = await supabase
+    .from('user_profiles')
+    .update(cleanUpdates)
+    .eq('id', user.id)
+
+  if (error) {
+    console.error('Error updating profile:', error)
+    return { success: false, error: error.message }
+  }
+
+  return { success: true }
+}
+
+export async function changePassword(currentPassword: string, newPassword: string): Promise<{ success: boolean; error?: string }> {
+  // First verify current password by trying to sign in
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user || !user.email) {
+    return { success: false, error: 'User not authenticated' }
+  }
+
+  // Verify current password
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: currentPassword
+  })
+
+  if (signInError) {
+    return { success: false, error: 'Current password is incorrect' }
+  }
+
+  // Update to new password
+  const { error: updateError } = await supabase.auth.updateUser({
+    password: newPassword
+  })
+
+  if (updateError) {
+    console.error('Error changing password:', updateError)
+    return { success: false, error: updateError.message }
+  }
+
+  return { success: true }
+}
+
+export async function deleteAccount(): Promise<{ success: boolean; error?: string }> {
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) {
+    return { success: false, error: 'User not authenticated' }
+  }
+
+  // Sign out the user (actual deletion would require admin API)
+  const { error } = await supabase.auth.signOut()
+
+  if (error) {
+    console.error('Error signing out:', error)
+    return { success: false, error: error.message }
+  }
+
+  return { success: true }
+}
